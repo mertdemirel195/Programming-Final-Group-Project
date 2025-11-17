@@ -18,23 +18,24 @@ def ensure_session_state() -> None:
 
 
 def login_form() -> None:
-    st.subheader("Log in")
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
-    if st.button("Login", use_container_width=True):
+    submit = st.button("Login", use_container_width=True)
+    if submit:
         if db.authenticate(email, password):
             st.session_state.user = email.lower()
             st.success(f"Welcome back, {email}")
+            st.rerun()
         else:
             st.error("Invalid email/password")
 
 
 def signup_form() -> None:
-    st.subheader("Create account")
     email = st.text_input("Email", key="signup_email")
     password = st.text_input("Password", type="password", key="signup_password")
     confirm = st.text_input("Confirm password", type="password", key="signup_confirm")
-    if st.button("Sign up", use_container_width=True):
+    submit = st.button("Sign up", use_container_width=True)
+    if submit:
         if not email or not password:
             st.error("Email and password required")
         elif password != confirm:
@@ -42,6 +43,7 @@ def signup_form() -> None:
         elif db.create_user(email, password):
             st.success("Account created! Please log in.")
             st.session_state.login_mode = "login"
+            st.rerun()
         else:
             st.error("That email is already registered")
 
@@ -76,12 +78,29 @@ def auth_section() -> Optional[str]:
     ensure_session_state()
     if st.session_state.user:
         return st.session_state.user
-    st.title("FinNews Portal")
+    st.markdown(
+        """
+        <div class="auth-hero">
+            <div>
+                <p class="eyebrow">Welcome to</p>
+                <h1>FinNews Portal</h1>
+                <p>Secure access to your command center. Sign in to view live intelligence.</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     tab_login, tab_signup, tab_google = st.tabs(["Login", "Sign Up", "Google"])
     with tab_login:
+        st.markdown("<div class='glass-panel auth-panel'><h3>Log in</h3>", unsafe_allow_html=True)
         login_form()
+        st.markdown("</div>", unsafe_allow_html=True)
     with tab_signup:
+        st.markdown("<div class='glass-panel auth-panel'><h3>Create account</h3>", unsafe_allow_html=True)
         signup_form()
+        st.markdown("</div>", unsafe_allow_html=True)
     with tab_google:
+        st.markdown("<div class='glass-panel auth-panel'><h3>Continue with Google</h3>", unsafe_allow_html=True)
         google_login_button()
+        st.markdown("</div>", unsafe_allow_html=True)
     return None

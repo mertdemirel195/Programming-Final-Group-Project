@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import random
+import math
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
 
@@ -20,6 +21,20 @@ COMPANIES = [
 
 CATEGORIES = ["Markets", "Stocks", "Crypto", "Banking", "Commodities", "Technology"]
 IMPACTS = ["Earnings", "Macro", "Product", "Regulation", "M&A", "Supply Chain"]
+
+REGION_MAP = {
+    "S&P 500": "Americas",
+    "NASDAQ": "Americas",
+    "Dow Jones": "Americas",
+    "Russell 2000": "Americas",
+    "FTSE 100": "EMEA",
+    "DAX": "EMEA",
+    "CAC 40": "EMEA",
+    "Nikkei 225": "APAC",
+    "Hang Seng": "APAC",
+    "Kospi": "APAC",
+    "ASX 200": "APAC",
+}
 
 
 def fake_headlines(count: int = 100) -> List[Dict[str, str]]:
@@ -81,17 +96,35 @@ def fake_signals() -> Dict[str, List[Dict[str, str]]]:
     }
 
 
-def fake_indices() -> List[Dict[str, str]]:
+def _generate_index_series(latest: float, points: int = 18) -> List[Dict[str, float]]:
+    current = latest
+    series = []
+    for step in reversed(range(points)):
+        current = max(500, current + random.uniform(-100, 120))
+        series.append({"step": step, "value": round(current, 2)})
+    series.sort(key=lambda x: x["step"])
+    series[-1]["value"] = round(latest, 2)
+    return series
+
+
+def fake_indices() -> List[Dict[str, str | float]]:
     snapshots = []
-    for label in ["S&P 500", "NASDAQ", "Dow Jones", "FTSE 100", "DAX", "Nikkei 225"]:
+    for label, region in REGION_MAP.items():
         base = random.uniform(3000, 15000)
         change = random.uniform(-150, 200)
+        current_value = base + change
+        change_pct = (change / base) * 100
+        trend = "Bullish" if change >= 0 else "Bearish"
         snapshots.append(
             {
-                "Index": label,
-                "Value": f"{base:,.2f}",
-                "Change": f"{change:+.2f}",
-                "Change %": f"{(change / base * 100):+.2f}%",
+                "name": label,
+                "region": region,
+                "value": round(current_value, 2),
+                "change": round(change, 2),
+                "change_pct": round(change_pct, 2),
+                "trend": trend,
+                "volatility": random.randint(80, 180),
+                "series": _generate_index_series(current_value),
             }
         )
     return snapshots
@@ -211,10 +244,55 @@ def company_snapshot(ticker: str) -> Dict[str, float]:
     }
 
 
-def company_price_series(ticker: str, days: int = 20) -> List[Dict[str, float]]:
-    base = random.uniform(50, 300)
-    series = []
-    for i in range(days):
-        base += random.uniform(-3, 3)
-        series.append({"day": i, "price": round(base, 2)})
+def company_price_series(ticker: str, bias: str | None = None, interval_minutes: int = 5) -> List[Dict[str, float]]:
+    """Generate intraday series with directional bias."""
+    session_minutes = 6.5 * 60
+    points = int(session_minutes // interval_minutes)
+    start_time = datetime.utcnow().replace(hour=13, minute=30, second=0, microsecond=0)
+    prev_close = random.uniform(40, 320)
+    price = prev_close + random.uniform(-2, 2)
+
+    sentiment = (bias or "neutral").lower()
+    base_trend = {
+        "buy": random.uniform(0.15, 0.35),
+        "bullish": random.uniform(0.15, 0.35),
+        "increase": random.uniform(0.15, 0.35),
+        "sell": -random.uniform(0.15, 0.35),
+        "bearish": -random.uniform(0.15, 0.35),
+        "decrease": -random.uniform(0.15, 0.35),
+    }.get(sentiment, random.uniform(-0.08, 0.08))
+
+    morning_burst = random.uniform(0.8, 1.6) * (1 if base_trend >= 0 else -1)
+    shock_center = random.uniform(0.35, 0.55)
+    shock_magnitude = random.uniform(1.5, 3.2) * (1 if base_trend >= 0 else -1)
+    series: List[Dict[str, float]] = []
+
+    for i in range(points):
+        progress = i / (points - 1)
+        timestamp = start_time + timedelta(minutes=i * interval_minutes)
+
+        morning_factor = morning_burst * math.exp(-progress * 6)
+        trend_component = base_trend * (1 - 0.4 * progress)
+        wave = math.sin(progress * math.pi * 1.5) * random.uniform(0.4, 1.2)
+        shock = 0
+        if abs(progress - shock_center) < 0.08:
+            shock = shock_magnitude * (1 - abs(progress - shock_center) / 0.08)
+
+        noise = random.uniform(-0.4, 0.4)
+        increment = morning_factor + trend_component + wave + shock + noise
+        price = max(1, price + increment)
+
+        volume = random.randint(250_000, 2_500_000)
+        if progress < 0.15 or progress > 0.85:
+            volume = int(volume * 1.4)
+
+        series.append(
+            {
+                "time": timestamp.isoformat(),
+                "price": round(price, 2),
+                "volume": volume,
+                "prev_close": round(prev_close, 2),
+            }
+        )
+
     return series
