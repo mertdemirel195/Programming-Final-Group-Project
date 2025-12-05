@@ -1,3 +1,4 @@
+.env
 streamlit_app/app_secrets.py
 __pycache__/
 *.pyc
