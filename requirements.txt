@@ -1,6 +1,6 @@
 streamlit>=1.39
 streamlit-autorefresh>=1.0
-streamlit-oauth>=0.1.19
+streamlit-oauth>=0.1.14
 pandas>=2.2
 altair>=5.3
 openai>=1.40

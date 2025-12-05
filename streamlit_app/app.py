@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -36,10 +39,11 @@ st.set_page_config(
 
 
 def load_css() -> None:
-    css_path = Path(__file__).parent / "static.css"
+    css_path = Path("static.css")
     if css_path.exists():
-        st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
-    
+        css = css_path.read_text(encoding="utf-8", errors="ignore")
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+        
     # Add real-time clock JavaScript
     st.markdown(
         """
