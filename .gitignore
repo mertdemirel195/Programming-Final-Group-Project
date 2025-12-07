@@ -1,4 +1,4 @@
-streamlit_app/app_secrets.py
+streamlit_app/.env
 __pycache__/
 *.pyc
 *.pyo
