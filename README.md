@@ -84,19 +84,20 @@ The requirements file already includes Streamlit, OpenAI, pandas, Altair, stream
 
 ## 5. Secret management
 ### 5.1 Primary secrets file
-- Create `streamlit_app/app_secrets.py` (already git-ignored) with:
+- Add the ".env" file sent to you into the project (already git-ignored) with:
   ```python
   """Private secrets (never commit real keys)."""
+  # Google OAuth
+  GOOGLE_CLIENT_ID="your-client-id"
+  GOOGLE_CLIENT_SECRET="your-client-secret"
+  GOOGLE_REDIRECT_URI="http://localhost:8501"
   OPENAI_API_KEY = "sk-REPLACE-ME"
   ```
 
 ### 5.2 Environment fallback
 - If the file is missing, `llm_utils.py` checks `OPENAI_API_KEY` environment variable.
 
-### 5.3 Optional Google OAuth
-- Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`. `auth_ui.py` only renders the button when all exist; otherwise it displays guidance.
-
-### 5.4 Security reminder
+### 5.3 Security reminder
 - Never commit `app_secrets.py`. The `.gitignore` rules in this repo already exclude it, but double-check before pushing.
 
 ## 6. Running the application
